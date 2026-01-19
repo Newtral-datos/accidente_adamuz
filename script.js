@@ -8,7 +8,7 @@ const MORON_LOCATION = [-5.45, 37.12];
 // Configuración de cada capítulo
 const CHAPTERS = {
     0: {
-        center: [-3.7, 40.4],  // Centro de España
+        center: [-3.8094642278958655, 39.1540240706266],  // Centro de España
         zoom: 5.5,
         pitch: 0,
         bearing: 0,
@@ -37,7 +37,7 @@ const CHAPTERS = {
     },
     4: {
         center: ACCIDENT_LOCATION,
-        zoom: 12,
+        zoom: 17,
         pitch: 60,
         bearing: 0,
         duration: 3000
@@ -62,6 +62,13 @@ const CHAPTERS = {
         pitch: 30,
         bearing: 0,
         duration: 2500
+    },
+    8: {
+        center: [-3.8094642278958655, 39.1540240706266],  // Centro de España
+        zoom: 5.5,
+        pitch: 0,
+        bearing: 0,
+        duration: 2000
     }
 };
 
@@ -90,7 +97,7 @@ const map = new maplibregl.Map({
             }
         ]
     },
-    center: [-3.7, 40.4],
+    center: [-3.8094642278958655, 39.1540240706266],
     zoom: 5.5,
     pitch: 0,
     bearing: 0,
@@ -438,6 +445,10 @@ function activateChapter(chapterNum) {
             hideAllMarkers();
             showMarker(accidentMarker);
             showMarker(moronMarker);
+            break;
+
+        case 8:
+            hideAllMarkers();
             break;
     }
 }
