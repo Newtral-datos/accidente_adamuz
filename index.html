@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accidente Adamuz</title>
+    <title>Accidente Ferroviario - Scrollytelling</title>
     
     <!-- MapLibre GL JS -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css">
@@ -44,17 +44,17 @@
             min-height: 100vh;
             display: flex;
             align-items: center;
-            padding: 40px;
+            padding: 25px;
             pointer-events: none;
         }
         
         /* Caja de contenido */
         .content-box {
             background: #ffffff;
-            border: 3px solid #01f3b3;
-            padding: 30px;
-            border-radius: 12px;
-            max-width: 500px;
+            border: 2px solid #01f3b3;
+            padding: 18px;
+            border-radius: 10px;
+            max-width: 340px;
             box-shadow: 0 4px 20px rgba(1, 243, 179, 0.3);
             pointer-events: auto;
             opacity: 0;
@@ -68,45 +68,47 @@
         }
         
         .content-box h2 {
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
             color: #000000;
-            font-size: 22px;
+            font-size: 16px;
         }
 
         .content-box p {
-            margin: 10px 0;
+            margin: 8px 0;
             color: #000000;
-            font-size: 16px;
-            line-height: 1.6;
+            font-size: 13px;
+            line-height: 1.5;
         }
 
         .content-box .chapter-number {
             display: inline-block;
             background: #01f3b3;
             color: #000000;
-            padding: 4px 12px;
+            padding: 3px 10px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         /* Estilos para nombres de trenes */
         .train-alvia {
             background: #830065;
             color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 1px 6px;
+            border-radius: 3px;
             font-weight: bold;
+            font-size: 12px;
             white-space: nowrap;
         }
-        
+
         .train-iryo {
             background: #d40c15;
             color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 1px 6px;
+            border-radius: 3px;
             font-weight: bold;
+            font-size: 12px;
             white-space: nowrap;
         }
         
@@ -491,6 +493,20 @@
                 <p>Se desplazan equipos especializados en rescate y emergencias para apoyar las labores.</p>
                 <p><strong>Unidad:</strong> UME - Segunda Intervención<br>
                 <strong>Origen:</strong> Base Aérea de Morón</p>
+            </div>
+        </section>
+
+        <!-- Capítulo 8 -->
+        <section class="chapter" data-chapter="7">
+            <div class="content-box">
+                <h2>El segundo accidente de tren con más fallecidos del siglo</h2>
+                <p>El descarrilamento de los dos trenes de alta velocidad en Adamuz ha provocado
+                    la muerte de al menos 39 personas y ha dejado más de un centenar de heridos.
+                </p>
+                <p>
+                    Se trata de la segunda tragedia ferroviaria con mayor número de fallecidos en lo
+                    que va de siglo en España y el primero de Alta Velocidad en el país.
+                </p>
             </div>
         </section>
         
