@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accidente Ferroviario - Scrollytelling</title>
+    
+    <!-- MapLibre GL JS -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/pmtiles@3.0.7/dist/pmtiles.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Mapa fijo en el fondo */
+        #map {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 0;
+        }
+        
+        /* Contenedor de capítulos */
+        #chapters {
+            position: relative;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        /* Cada capítulo */
+        .chapter {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 40px;
+            pointer-events: none;
+        }
+        
+        /* Caja de contenido */
+        .content-box {
+            background: #ffffff;
+            border: 3px solid #01f3b3;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(1, 243, 179, 0.3);
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .chapter.active .content-box {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .content-box h2 {
+            margin: 0 0 15px 0;
+            color: #000000;
+            font-size: 22px;
+        }
+
+        .content-box p {
+            margin: 10px 0;
+            color: #000000;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .content-box .chapter-number {
+            display: inline-block;
+            background: #01f3b3;
+            color: #000000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        /* Estilos para nombres de trenes */
+        .train-alvia {
+            background: #830065;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .train-iryo {
+            background: #d40c15;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        /* Alineación de las cajas */
+        .chapter:nth-child(odd) {
+            justify-content: flex-start;
+        }
+        
+        .chapter:nth-child(even) {
+            justify-content: flex-end;
+        }
+        
+        /* Espaciador inicial y final */
+        .spacer {
+            height: 50vh;
+        }
+        
+        /* Indicador de progreso */
+        #progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(90deg, #01f3b3, #00d9a0);
+            z-index: 999;
+            transition: width 0.3s ease;
+        }
+        
+        /* Título principal */
+        #main-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            z-index: 10;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Pulso animado para marcadores importantes */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(1, 243, 179, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(1, 243, 179, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(1, 243, 179, 0);
+            }
+        }
+
+        .pulse-marker {
+            animation: pulse 2s infinite;
+        }
+
+        /* Animaciones para el momento del accidente */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes explosion {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes debris {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes smoke {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-50px) scale(2);
+                opacity: 0;
+            }
+        }
+
+        .shake-effect {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .explosion-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .explosion-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            margin: -50px 0 0 -50px;
+            border: 4px solid #01f3b3;
+            border-radius: 50%;
+            animation: explosion 1s ease-out forwards;
+        }
+
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #01f3b3;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+        }
+
+        .flash-overlay.active {
+            animation: flash 0.3s ease-out;
+        }
+
+        .debris-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #333;
+            animation: debris 1.5s ease-out forwards;
+        }
+
+        .smoke-particle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(100,100,100,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: smoke 2s ease-out forwards;
+        }
+
+        /* Estilos responsive */
+        @media (max-width: 768px) {
+            .chapter {
+                padding: 20px;
+            }
+
+            .content-box {
+                max-width: 100%;
+                padding: 20px;
+                margin: 0 10px;
+            }
+
+            .content-box h2 {
+                font-size: 22px;
+            }
+
+            .content-box p {
+                font-size: 14px;
+            }
+
+            #main-title {
+                font-size: 14px;
+                padding: 10px 15px;
+                max-width: 90%;
+            }
+
+            .chapter:nth-child(odd),
+            .chapter:nth-child(even) {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chapter {
+                padding: 15px;
+            }
+
+            .content-box {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .content-box h2 {
+                font-size: 18px;
+            }
+
+            .content-box p {
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .content-box .chapter-number {
+                font-size: 12px;
+                padding: 3px 10px;
+            }
+
+            #main-title {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .spacer {
+                height: 30vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+    <div id="map"></div>
+    <div class="flash-overlay" id="flash-overlay"></div>
+    <div class="explosion-overlay" id="explosion-overlay"></div>
+    
+    <div id="chapters">
+        <div class="spacer"></div>
+        
+        <!-- Capítulo 0: Vista general -->
+        <section class="chapter" data-chapter="0">
+            <div class="content-box">
+                <span class="chapter-number">Línea Madrid-Málaga</span>
+                <p>La línea de Alta Velocidad Madrid-Málaga es una de las infraestructuras ferroviarias más importantes de España.</p>
+                <p>Conecta la capital con Andalucía a través de más de 500 kilómetros de vía.</p>
+            </div>
+        </section>
+        
+        <!-- Capítulo 1: 18:05 Atocha -->
+        <section class="chapter" data-chapter="1">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">18:05</span>
+                <h2>🚉 Estación de Atocha (Madrid)</h2>
+                <p>Sale de la estación de Atocha (Madrid) el tren <span class="train-alvia">Alvia 2384</span>, que cubre el trayecto Madrid-Huelva.</p>
+                <p><strong>Tren:</strong> <span class="train-alvia">Alvia 2384</span><br>
+                <strong>Ruta:</strong> Madrid → Huelva<br>
+                <strong>Ubicación:</strong> Atocha, Madrid</p>
+            </div>
+        </section>
+        
+        <!-- Capítulo 2: 18:40 María Zambrano -->
+        <section class="chapter" data-chapter="2">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">18:40</span>
+                <h2>🚄 Estación María Zambrano (Málaga)</h2>
+                <p>El tren <span class="train-iryo">Iryo 6189</span>, que cubre la ruta Málaga-Madrid, sale de la estación María-Zambrano.</p>
+                <p>En él circulaban 289 pasajeros, cuatro tripulantes y el conductor del vehículo.</p>
+                <p><strong>Tren:</strong> <span class="train-iryo">Iryo 6189</span><br>
+                <strong>Pasajeros:</strong> 289<br>
+                <strong>Tripulación:</strong> 5 personas</p>
+            </div>
+        </section>
+        
+        <!-- Capítulo 3: 19:39 Córdoba -->
+        <section class="chapter" data-chapter="3">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">19:39</span>
+                <h2>🛑 Parada en Córdoba</h2>
+                <p>El tren <span class="train-iryo">Iryo</span> efectúa una parada en la estación de Córdoba-Julio Anguita.</p>
+                <p>Los pasajeros desconocen que en pocos minutos ocurrirá la tragedia.</p>
+                <p><strong>Ubicación:</strong> Estación Córdoba-Julio Anguita<br>
+                <strong>Estado:</strong> Parada programada</p>
+            </div>
+        </section>
+        
+        <!-- Capítulo 4: 19:45 Accidente -->
+        <section class="chapter" data-chapter="4">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">19:39</span>
+                <h2>Accidente en Adamuz, Córdoba</h2>
+                <p>Se produce el descarrilamiento de los últimos coches del tren <span class="train-iryo">Iryo</span>, que invaden la vía contraria.</p>
+                <p>El tren <span class="train-alvia">Alvia</span> que en esos momentos estaba circulando por la vía contigua choca con el vehículo descarrilado.</p>
+                <p>Como consecuencia, las dos primeras unidades del tren se precipitan por un terraplén contiguo a la vía.</p>
+                <img src="https://live.staticflickr.com/65535/55049563904_aeb26ab62c_b.jpg" 
+         alt="mapa petroleros interceptados Estados Unidos"
+         style="max-width: 40%; height: auto; display: block; margin: 0 auto;">
+                <br>
+            </div>
+        </section>
+        
+        <!-- Capítulo 5: 19:50 Emergencias -->
+        <section class="chapter" data-chapter="5">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">19:50</span>
+                <h2>Primeras Llamadas al 112</h2>
+                <p>El 112 comienza a recibir numerosas llamadas desde el lugar de los hechos.</p>
+                <p>Los testigos reportan una situación de extrema gravedad con múltiples heridos.</p>
+                <p><strong>Servicio:</strong> 112 Emergencias<br>
+                <strong>Estado:</strong> Activación de protocolos</p>
+                <img src="https://live.staticflickr.com/65535/55049305181_0f4ce7d572_b.jpg" 
+                alt="mapa petroleros interceptados Estados Unidos"
+                style="max-width: 40%; height: auto; display: block; margin: 0 auto;">
+                <br>
+            </div>
+        </section>
+        
+        <!-- Capítulo 6: 21:50 Plan de Emergencias -->
+        <section class="chapter" data-chapter="6">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">21:50</span>
+                <h2>Activación del Plan de Emergencias</h2>
+                <p>Se activa la Fase 1 del Plan de Emergencias de Andalucía.</p>
+                <p>Múltiples recursos sanitarios y de rescate se desplazan al lugar del accidente.</p>
+                <p><strong>Plan:</strong> Emergencias de Andalucía<br>
+                <strong>Fase:</strong> 1 activada</p>
+                <img src="https://live.staticflickr.com/65535/55049492763_1aedd03c73_b.jpg" 
+                alt="mapa petroleros interceptados Estados Unidos"
+                style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+                <br>
+            </div>
+        </section>
+        
+        <!-- Capítulo 7: 23:43 UME -->
+        <section class="chapter" data-chapter="7">
+            <div class="content-box">
+                <span class="chapter-number" style="background: #01f3b3;">23:43</span>
+                <h2>Intervención de la UME</h2>
+                <p>La Unidad de Segunda Intervención de la UME parte desde la Base Aérea de Morón.</p>
+                <p>Se desplazan equipos especializados en rescate y emergencias para apoyar las labores.</p>
+                <p><strong>Unidad:</strong> UME - Segunda Intervención<br>
+                <strong>Origen:</strong> Base Aérea de Morón</p>
+            </div>
+        </section>
+        
+        <div class="spacer"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
